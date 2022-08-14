@@ -1,0 +1,28 @@
+{
+  "name": "db-mixin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "db.mixin.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PaaS-Shack/db-mixin.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/PaaS-Shack/db-mixin/issues"
+  },
+  "homepage": "https://github.com/PaaS-Shack/db-mixin#readme",
+  "dependencies": {
+    "@moleculer/database": "git+https://github.com/moleculerjs/database.git",
+    "hashids": "^2.2.10",
+    "lodash": "^4.17.21",
+    "mkdirp": "^1.0.4",
+    "moleculer": "^0.14.19",
+    "mongodb": "^4.4.1",
+    "nedb": "^1.8.0"
+  }
+}
