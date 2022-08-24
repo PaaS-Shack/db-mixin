@@ -93,20 +93,51 @@ module.exports = function (opts = {}) {
 		},
 
 		actions: {
-			
+			create: {
+				permissions: ['services.create'],
+			},
+			createMany: false,
+
+			list: {
+				permissions: ['services.list'],
+			},
+
+			find: {
+				rest: "GET /find",
+				permissions: ['services.find'],
+			},
+
+			count: {
+				rest: "GET /count",
+				permissions: ['services.count'],
+			},
+
+			get: false,
+
+			update: {
+				needEntity: true,
+				permissions: ['services.update']
+			},
+
+			replace: false,
+
+			remove: {
+				needEntity: true,
+				permissions: ['services.remove']
+			},
 		},
 
 		// No need hashids encoding for NeDB at unit testing
 		methods: {
-			async validateHas(caller,key,query, ctx, params) {
+			async validateHas(caller, key, query, ctx, params) {
 				// Adapter init
 				if (!ctx) return query;
-	
+
 				if (params[key]) {
 					const res = await ctx.call(caller, {
 						id: params[key]
 					});
-	
+
 					if (res) {
 						query[key] = params[key];
 						return query;
@@ -166,6 +197,8 @@ module.exports = function (opts = {}) {
 		}
 	};
 
-	return schema;
+	return {
+		mixins: [schema]
+	};
 };
 module.exports.db = require("@moleculer/database")
