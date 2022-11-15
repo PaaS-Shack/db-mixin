@@ -68,20 +68,17 @@ module.exports = function (opts = {}) {
 					type: "number",
 					readonly: true,
 					onCreate: () => Date.now(),
-					graphql: { type: "Long" }
 				},
 				updatedAt: {
 					type: "number",
 					readonly: true,
 					onUpdate: () => Date.now(),
-					graphql: { type: "Long" }
 				},
 				deletedAt: {
 					type: "number",
 					readonly: true,
 					hidden: "byDefault",
 					onRemove: () => Date.now(),
-					graphql: { type: "Long" }
 				}
 			},
 
