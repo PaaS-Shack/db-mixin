@@ -10,45 +10,104 @@ const ObjectID = require("mongodb").ObjectID;
 
 const TESTING = process.env.NODE_ENV === "test";
 
-module.exports = function (opts = {}) {
-	if (!process.env.TOKEN_SALT && (TESTING || process.env.TEST_E2E)) {
-		process.env.HASHID_SALT = crypto.randomBytes(32).toString("hex");
+const FIELDS = {
+	id: {
+		type: "string",
+		primaryKey: true,
+		secure: true,
+		columnName: "_id"
+	},
+	options: { type: "object" },
+	createdAt: {
+		type: "number",
+		readonly: true,
+		onCreate: () => Date.now(),
+	},
+	updatedAt: {
+		type: "number",
+		readonly: true,
+		onUpdate: () => Date.now(),
+	},
+	deletedAt: {
+		type: "number",
+		readonly: true,
+		hidden: "byDefault",
+		onRemove: () => Date.now(),
 	}
+}
+const SCOPE = {
+	notDeleted: { deletedAt: null }
+}
+const DSCOPE = ['notDeleted']
+
+
+const ACTIONS = {
+	create: {
+		permissions: []
+	},
+	list: {
+		permissions: []
+	},
+
+	find: {
+		rest: "GET /find",
+		permissions: []
+	},
+
+	count: {
+		rest: "GET /count",
+		permissions: []
+	},
+
+	get: {
+		needEntity: true,
+		permissions: []
+	},
+
+	update: {
+		needEntity: true,
+		permissions: []
+	},
+
+	replace: false,
+
+	remove: {
+		needEntity: true,
+		permissions: []
+	},
+}
+
+module.exports = function (opts = {}) {
 
 	const hashids = new HashIds(process.env.HASHID_SALT);
 
-	if ((TESTING && !process.env.TEST_INT) || process.env.ONLY_GENERATE) {
+	if (opts.nedb) {
+		const dir = path.resolve(opts.nedb);
+		mkdir(dir);
 		opts = _.defaultsDeep(opts, {
-			adapter: "NeDB"
+			adapter: {
+				type: "NeDB",
+				options: {
+					neDB: {
+						inMemoryOnly: false,
+						corruptAlertThreshold: 0.5,
+						filename: path.join(dir, `${opts.collection}.db`)
+					}
+				}
+			}
 		});
 	} else {
-		if (process.env.NEDB_FOLDER || opts.nedb) {
-			const dir = path.resolve(process.env.NEDB_FOLDER || opts.nedb);
-			mkdir(dir);
-			opts = _.defaultsDeep(opts, {
-				adapter: {
-					type: "NeDB",
-					options: {
-						neDB: {
-							inMemoryOnly: false,
-							corruptAlertThreshold: 0.5,
-							filename: path.join(dir, `${opts.collection}.db`)
-						}
-					}
+		opts = _.defaultsDeep(opts, {
+			adapter: {
+				type: "MongoDB",
+				options: {
+					uri: process.env.MONGO_URI || "mongodb://localhost/data",
+					collection: opts.collection
 				}
-			});
-		} else {
-			opts = _.defaultsDeep(opts, {
-				adapter: {
-					type: "MongoDB",
-					options: {
-						uri: process.env.MONGO_URI || "mongodb://localhost/data",
-						collection: opts.collection
-					}
-				}
-			});
-		}
+			}
+		});
 	}
+
 
 
 	const schema = {
@@ -56,41 +115,15 @@ module.exports = function (opts = {}) {
 
 		settings: {
 
-			fields: {
-				id: {
-					type: "string",
-					primaryKey: true,
-					secure: true,
-					columnName: "_id"
-				},
-				options: { type: "object" },
-				createdAt: {
-					type: "number",
-					readonly: true,
-					onCreate: () => Date.now(),
-				},
-				updatedAt: {
-					type: "number",
-					readonly: true,
-					onUpdate: () => Date.now(),
-				},
-				deletedAt: {
-					type: "number",
-					readonly: true,
-					hidden: "byDefault",
-					onRemove: () => Date.now(),
-				}
-			},
+			fields: { ...FIELDS },
 
-			scopes: {
-				notDeleted: { deletedAt: null }
-			},
+			scopes: { ...SCOPE },
 
-			defaultScopes: ["notDeleted"]
+			defaultScopes: [...DSCOPE]
 		},
 
 		actions: {
-			
+			...ACTIONS
 		},
 
 		// No need hashids encoding for NeDB at unit testing
@@ -138,8 +171,8 @@ module.exports = function (opts = {}) {
 		},
 
 		async started() {
-			/* istanbul ignore next */
-			if (!TESTING) {
+
+			if (_.isFunction(this.createIndexes)) {
 				try {
 					// Create indexes
 					await this.createIndexes();
@@ -148,17 +181,13 @@ module.exports = function (opts = {}) {
 				}
 			}
 
-			if (process.env.TEST_E2E || process.env.TEST_INT) {
-				// Clean collection
-				this.logger.info(`Clear '${opts.collection}' collection before tests...`);
-				await this.clearEntities();
-			}
-
 			// Seeding if the DB is empty
-			const count = await this.countEntities(null, {});
-			if (count == 0 && _.isFunction(this.seedDB)) {
-				this.logger.info(`Seed '${opts.collection}' collection...`);
-				await this.seedDB();
+			if (_.isFunction(this.seedDB)) {
+				const count = await this.countEntities(null, {});
+				if (count == 0) {
+					this.logger.info(`Seed '${opts.collection}' collection...`);
+					await this.seedDB();
+				}
 			}
 		}
 	};
@@ -166,3 +195,7 @@ module.exports = function (opts = {}) {
 	return schema;
 };
 module.exports.db = require("@moleculer/database")
+module.exports.DSCOPE = DSCOPE
+module.exports.SCOPE = SCOPE
+module.exports.FIELDS = FIELDS
+module.exports.ACTIONS = ACTIONS
