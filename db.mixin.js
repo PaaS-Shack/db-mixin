@@ -113,18 +113,6 @@ module.exports = function (opts = {}) {
 	const schema = {
 		mixins: [DbService(opts)],
 
-		settings: {
-
-			fields: { ...FIELDS },
-
-			scopes: { ...SCOPE },
-
-			defaultScopes: [...DSCOPE]
-		},
-
-		actions: {
-			...ACTIONS
-		},
 
 		// No need hashids encoding for NeDB at unit testing
 		methods: {
