@@ -113,6 +113,53 @@ module.exports = function (opts = {}) {
 	const schema = {
 		mixins: [DbService(opts)],
 
+		actions: {
+			create: {
+				permissions: [`${opts.permissions}.create`]
+			},
+			list: {
+				permissions: [
+					`${opts.permissions}.list`,
+				]
+			},
+
+			find: {
+				rest: "GET /find",
+				permissions: [
+					`${opts.permissions}.find`,
+				]
+			},
+
+			count: {
+				rest: "GET /count",
+				permissions: [
+					`${opts.permissions}.count`,
+				]
+			},
+
+			get: {
+				needEntity: true,
+				permissions: [
+					`${opts.permissions}.get`,
+				]
+			},
+
+			update: {
+				needEntity: true,
+				permissions: [
+					`${opts.permissions}.update`,
+				]
+			},
+
+			replace: false,
+
+			remove: {
+				needEntity: true,
+				permissions: [
+					`${opts.permissions}.remove`,
+				]
+			},
+		},
 
 		// No need hashids encoding for NeDB at unit testing
 		methods: {
